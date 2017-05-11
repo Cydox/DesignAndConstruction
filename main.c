@@ -49,7 +49,7 @@ double stringerArea(const stringer* s) {
 }
 
 double stringerQ(const stringer* s) {
-	return elementQ(&(s->e1)) + elementQ(&(s->e2)) + s->y_pos * stringerArea(s);
+	return elementQ(&(s->e1)) + elementQ(&(s->e2));
 }
 
 double stringerY(const stringer* s) {
@@ -57,7 +57,7 @@ double stringerY(const stringer* s) {
 }
 
 double stringerIx(const stringer* s) {
-	return elementIx(&(s->e1)) + elementArea(&(s->e1)) * (elementY(&(s->e1)) - stringerY(s)) * (elementY(&(s->e1)) - stringerY(s)) + elementIx(&(s->e2)) + elementArea(&(s->e2)) * (elementY(&(s->e2)) - stringerY(s)) * (elementY(&(s->e2)) - stringerY(s));
+	return elementIx(&(s->e1)) + elementArea(&(s->e1)) * (elementY(&(s->e1)) - stringerY(s)) * (elementY(&(s->e1)) - stringerY(s)) + elementIx(&(s->e2)) + elementArea(&(s->e2)) * (elementY(&(s->e2)) - stringerY(s)) * (elementY(&(s->e2)) - stringerY(s)) + stringerArea(s) * stringerY(s) * stringerY(s);
 }
 
 int main() {
