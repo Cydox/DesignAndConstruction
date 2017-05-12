@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
 
 typedef struct element {
@@ -37,11 +38,15 @@ typedef struct stringer {
 	element e2;
 
 	int constant;
+
+	struct stringer* next;
 } stringer;
 
-stringer newStringer(double x, double y, double w, double t) {
-	stringer s = {x, y, {w, t, x, y, 1}, {t, w - t, x, y + t, 1}, 1};
-	return s;
+stringer* newStringer(double x, double y, double w, double t, stringer* next) {
+	stringer s = {x, y, {w, t, x, y, 1}, {t, w - t, x, y + t, 1}, 1, next};
+	stringer* ps = (stringer*) malloc(sizeof(stringer));
+	*ps = s;
+	return ps;
 }
 
 double stringerArea(const stringer* s) {
@@ -63,13 +68,14 @@ double stringerIx(const stringer* s) {
 int main() {
 	element e = {0.1f, 0.1f, 0.0f, 0.0f, .constant = 1};
 
-	stringer s = newStringer(0.0f, 10.0f, 20.0f, 1.5f);
+	stringer* s = newStringer(0.0f, 10.0f, 20.0f, 1.5f, NULL);
 	
-	printf("%f\n", stringerIx(&s));
-	printf("%f\n", stringerY(&s));
+	printf("%f\n", stringerIx(s));
+	printf("%f\n", stringerY(s));
 	//printf("%f\n", elementArea(&e));
 	//printf("%f\n", elementY(&e));
 	//printf("%f\n", elementQ(&e));
 	//printf("%f\n", elementIx(&e));
+	free(s);
 	return 0;
 }
