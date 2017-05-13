@@ -36,7 +36,7 @@ double elementQ(const element* e) {
 }
 
 double elementIx(const element* e) {
-	return e->constant * (1.0f / 12.0f) * (e->x * e->y * e->y * e->y);
+	return e->constant * (1.0 / 12.0) * (e->x * e->y * e->y * e->y);
 }
 
 typedef struct stringer {
@@ -99,12 +99,16 @@ double panelIx(const panel* p) {
 	return elementIx(&(p->sheet)) + elementArea(&(p->sheet)) * (elementY(&(p->sheet)) - panelY(p)) * (elementY(&(p->sheet)) - panelY(p)) + p->numberOfStringers * (stringerIx(&(p->stringer)) + stringerArea(&(p->stringer)) * (stringerY(&(p->stringer)) - panelY(p)) * (stringerY(&(p->stringer)) - panelY(p)));
 }
 
-int main() {
-	element e = {0.1f, 0.1f, 0.0f, .constant = 1};
 
-	stringer s = newStringer(0.0f, 20.0f, 1.5f);
+
+
+
+int main() {
+	element e = {0.1, 0.1, 0.0, .constant = 1};
+
+	stringer s = newStringer(0.0, 20.0, 1.5);
 	material al = {0,0,0,0};
-	panel p = newPanel(3, 0.8f, 20.0f, 1.5f, al);
+	panel p = newPanel(3, 0.8, 20.0, 1.5, al);
 
 	printf("%f\n", panelY(&p));
 	printf("%f\n", stringerIx(&(p.stringer)));
