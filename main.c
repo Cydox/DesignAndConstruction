@@ -154,7 +154,7 @@ double panelSheetBuckling(const panel* p) {
 		
 		double pitch = PANEL_WIDTH / (p->numberOfStringers - 1.0);
 		
-		return panelArea(p) * Kc[p->numberOfStringers - 1] * p->m.E * (p->sheet.y / pitch) * (p->sheet.y / pitch);
+		return panelArea(p) * Kc[p->numberOfStringers] * p->m.E * (p->sheet.y / pitch) * (p->sheet.y / pitch);
 	}
 }
 
@@ -171,12 +171,12 @@ int getIndexOfMinFail(double failures[3]) {
 	double val = failures[0];
 
 	for (int i = 1; i < 3; i++) {
-		if (failures[i] < val && !failures[i] < 0) {
+		if (failures[i] < val && failures[i] != -1) {
 			val = failures[i];
 			index = i;
 		}
-		return index;
 	}
+	return index;
 }
 
 void progressiveFailureAnalysis(material m, double sheetThickness, double stringerDimension[2]) {
@@ -186,13 +186,13 @@ void progressiveFailureAnalysis(material m, double sheetThickness, double string
 	double failure = 0;
 	double buckling = 0;
 
-	for (int i = 0; failure < FAILURE_REQUIREMENT && buckling < BUCKLING_REQUIREMENT; i++) {
-		printf("%s,%f,%f,%f,%d", m.name, sheetThickness, stringerDimension[0], stringerDimension[1], i);
+	for (int i = 2; (failure < FAILURE_REQUIREMENT) || (buckling < BUCKLING_REQUIREMENT); i++) {
 		bool failed = false;
 		bool buckled = false;
 
 		panel p = newPanel(i, sheetThickness, stringerDimension[0], stringerDimension[1], m);
 
+		printf("%s,%f,%f,%f,%f,%d", m.name, panelMass(&p), sheetThickness, stringerDimension[0], stringerDimension[1], i);
 		while (!failed) {
 			double failures[] = {panelUltFailure(&p), panelSheetBuckling(&p), panelColumnBuckling(&p)};
 			int index = getIndexOfMinFail(failures);
@@ -200,22 +200,30 @@ void progressiveFailureAnalysis(material m, double sheetThickness, double string
 			if (index == 0) {
 				failed = true;
 				failure = failures[0];
+
+				printf(",all,%f", failure);
 			} else if (index == 1 && !buckled) {
 				buckled = true;
 				buckling = failures[1];
 				p.sheet.notFailed = false;
+				printf(",sheet,%f", buckling);
 			} else if (index == 1 && buckled) {
 				failed = true;
 				failure = failures[1];
+				printf(",sheet,%f", failure);
 			} else if (index == 2 && !buckled) {
 				buckled = true;
 				buckling = failures[2];
 				p.stringer.notFailed = false;
+				printf(",stringers,%f", buckling);
 			} else if (index == 2 && buckled) {
 				failed = true;
 				failure = failures[2];
+				printf(",stringers,%f", failure);
 			}
 		}
+
+		printf("\n");
 	}
 }
 
@@ -251,7 +259,7 @@ int main() {
 	}
 
 	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 4; j++) {
+		for (int j = 0; j < 2; j++) {
 			
 			progressiveFailureAnalysis(steel, sheetThicknesses[i], steelStringerDimensions[j]);
 		}
