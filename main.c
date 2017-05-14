@@ -20,11 +20,15 @@ typedef struct element {
 
 	double y_pos;
 
-	int constant;
+	bool notFailed;
 } element;
 
 double elementArea(const element* e) {
-	return e->constant * e->x * e->y;
+	if (!e->notFailed) {
+		return 0;
+	} else {
+		return e->x * e->y;
+	}
 }
 
 double elementY(const element* e) {
@@ -32,11 +36,19 @@ double elementY(const element* e) {
 }
 
 double elementQ(const element* e) {
-	return e->constant * elementArea(e) * elementY(e);
+	if (!e->notFailed) {
+		return 0;
+	} else {
+		return elementArea(e) * elementY(e);
+	}
 }
 
 double elementIx(const element* e) {
-	return e->constant * (1.0 / 12.0) * (e->x * e->y * e->y * e->y);
+	if (!e->notFailed) {
+		return 0;
+	} else {
+		return (1.0 / 12.0) * (e->x * e->y * e->y * e->y);
+	}
 }
 
 typedef struct stringer {
@@ -45,28 +57,44 @@ typedef struct stringer {
 	element e1;
 	element e2;
 
-	int constant;
+	bool notFailed;
 } stringer;
 
 stringer newStringer(double y, double w, double t) {
-	stringer s = {y, {w, t, y, 1}, {t, w - t, y + t, 1}, 1};
+	stringer s = {y, {w, t, y, true}, {t, w - t, y + t, true}, true};
 	return s;
 }
 
 double stringerArea(const stringer* s) {
-	return s->constant * (elementArea(&(s->e1)) + elementArea(&(s->e2)));
+	if (!s->notFailed) {
+		return 0;
+	} else {
+		return elementArea(&(s->e1)) + elementArea(&(s->e2));
+	}
 }
 
 double stringerQ(const stringer* s) {
-	return s->constant * (elementQ(&(s->e1)) + elementQ(&(s->e2)));
+	if (!s->notFailed) {
+		return 0;
+	} else {
+		return elementQ(&(s->e1)) + elementQ(&(s->e2));
+	}
 }
 
 double stringerY(const stringer* s) {
-	return stringerQ(s) / stringerArea(s);
+	if (!s->notFailed) {
+		return 0;
+	} else {
+		return stringerQ(s) / stringerArea(s);
+	}
 }
 
 double stringerIx(const stringer* s) {
-	return s->constant * (elementIx(&(s->e1)) + elementArea(&(s->e1)) * (elementY(&(s->e1)) - stringerY(s)) * (elementY(&(s->e1)) - stringerY(s)) + elementIx(&(s->e2)) + elementArea(&(s->e2)) * (elementY(&(s->e2)) - stringerY(s)) * (elementY(&(s->e2)) - stringerY(s))/* + stringerArea(s) * stringerY(s) * stringerY(s)*/);
+	if (!s->notFailed) {
+		return 0;
+	} else {
+		return elementIx(&(s->e1)) + elementArea(&(s->e1)) * (elementY(&(s->e1)) - stringerY(s)) * (elementY(&(s->e1)) - stringerY(s)) + elementIx(&(s->e2)) + elementArea(&(s->e2)) * (elementY(&(s->e2)) - stringerY(s)) * (elementY(&(s->e2)) - stringerY(s))/* + stringerArea(s) * stringerY(s) * stringerY(s)*/;
+	}
 }
 
 typedef struct panel {
@@ -113,12 +141,12 @@ double panelSheetBuckling(const panel* p) {
 	
 	double pitch = PANEL_WIDTH / (p->numberOfStringers - 1.0);
 
-	return panelArea(p) Kc[p->numberOfStringers] * p->m.E * (p->sheet.y / pitch) * (p->sheet.y / pitch);
+	return panelArea(p) * Kc[p->numberOfStringers] * p->m.E * (p->sheet.y / pitch) * (p->sheet.y / pitch);
 }
 
 
 int main() {
-	element e = {0.1, 0.1, 0.0, .constant = 1};
+	//element e = {0.1, 0.1, 0.0, .constant = 1};
 
 	stringer s = newStringer(0.0, 20.0, 1.5);
 	material al = {0,0,0,0};
