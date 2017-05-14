@@ -72,13 +72,14 @@ double stringerIx(const stringer* s) {
 typedef struct panel {
 	element sheet;
 	stringer stringer;
+	material m;
 	int numberOfStringers;
 } panel;
 
 panel newPanel(int n, double sheetThickness, double stringerWidth, double stringerThickness, material m) {
 	stringer stringer = newStringer(sheetThickness, stringerWidth, stringerThickness);
 	element sheet = {PANEL_WIDTH, sheetThickness, 0, 1};
-	panel p = {sheet, stringer, n};
+	panel p = {sheet, stringer, m, n};
 
 	return p;
 }
@@ -99,8 +100,21 @@ double panelIx(const panel* p) {
 	return elementIx(&(p->sheet)) + elementArea(&(p->sheet)) * (elementY(&(p->sheet)) - panelY(p)) * (elementY(&(p->sheet)) - panelY(p)) + p->numberOfStringers * (stringerIx(&(p->stringer)) + stringerArea(&(p->stringer)) * (stringerY(&(p->stringer)) - panelY(p)) * (stringerY(&(p->stringer)) - panelY(p)));
 }
 
+double panelYield(const panel* p) {
+	return panelArea(p) * p->m.sigmaYield;
+}
 
+double panelUltFailure(const panel* p) {
+	return panelArea(p) * p->m.sigmaUlt;
+}
 
+double panelSheetBuckling(const panel* p) {
+	double Kc[] = {3, 4, 5};
+	
+	double pitch = PANEL_WIDTH / (p->numberOfStringers - 1.0);
+
+	return panelArea(p) Kc[p->numberOfStringers] * p->m.E * (p->sheet.y / pitch) * (p->sheet.y / pitch);
+}
 
 
 int main() {
