@@ -1,10 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <math.h>
 
 
 #define PANEL_WIDTH 400
 #define PANEL_LENGTH 500
+#define C 4
 
 
 typedef struct material{
@@ -137,26 +139,37 @@ double panelUltFailure(const panel* p) {
 }
 
 double panelSheetBuckling(const panel* p) {
-	double Kc[] = {3, 4, 5};
-	
-	double pitch = PANEL_WIDTH / (p->numberOfStringers - 1.0);
-
-	return panelArea(p) * Kc[p->numberOfStringers] * p->m.E * (p->sheet.y / pitch) * (p->sheet.y / pitch);
+	if (!p->sheet.notFailed) {
+		return -1;
+	} else {
+		double Kc[] = {3.6,3.6,3.6,3.6,3.6,3.6,3.6,3.6,3.6,3.6};
+		
+		double pitch = PANEL_WIDTH / (p->numberOfStringers - 1.0);
+		
+		return panelArea(p) * Kc[p->numberOfStringers - 1] * p->m.E * (p->sheet.y / pitch) * (p->sheet.y / pitch);
+	}
 }
 
+double panelColumnBuckling(const panel* p) {
+	if (!p->stringer.notFailed) {
+		return -1;
+	} else {
+		return (C * M_PI * M_PI * p->m.E * panelIx(p)) / (PANEL_LENGTH * PANEL_LENGTH);
+	}
+}
 
 int main() {
 	//element e = {0.1, 0.1, 0.0, .constant = 1};
 
 	stringer s = newStringer(0.0, 20.0, 1.5);
-	material al = {0,0,0,0};
-	panel p = newPanel(3, 0.8, 20.0, 1.5, al);
+	material al = {72400,0,345,483};
+	panel p = newPanel(5, 0.8, 20.0, 1.5, al);
 
-	printf("%f\n", panelY(&p));
-	printf("%f\n", stringerIx(&(p.stringer)));
-	printf("%f\n", stringerY(&(p.stringer)));
-	printf("%f\n", stringerY(&s));
 	printf("%f\n", panelIx(&p));
+	printf("%f\n", panelSheetBuckling(&p));
+	printf("%f\n", panelColumnBuckling(&p));
+	printf("%f\n", panelYield(&p));
+	printf("%f\n", panelUltFailure(&p));
 	//printf("%f\n", elementArea(&e));
 	//printf("%f\n", elementY(&e));
 	//printf("%f\n", elementQ(&e));
