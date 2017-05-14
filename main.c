@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <math.h>
 
+#define PI 3.141592653589
 
 #define PANEL_WIDTH 400
 #define PANEL_LENGTH 500
@@ -158,8 +158,12 @@ double panelColumnBuckling(const panel* p) {
 	if (!p->stringer.notFailed) {
 		return -1;
 	} else {
-		return (C * M_PI * M_PI * p->m.E * panelIx(p)) / (PANEL_LENGTH * PANEL_LENGTH);
+		return (C * PI * PI * p->m.E * panelIx(p)) / (PANEL_LENGTH * PANEL_LENGTH);
 	}
+}
+
+void progressiveFailureAnalysis(material m, double sheetThickness, double stringerDismension[2]) {
+	
 }
 
 int main() {
@@ -178,8 +182,28 @@ int main() {
 	//printf("%f\n", elementY(&e));
 	//printf("%f\n", elementQ(&e));
 	//printf("%f\n", elementIx(&e));*/
+	
+	material aluminum = {72400, 2.78, 345, 483};
+	material steel = {210000, 7.8, 1100, 1275};
 
-	material al = {72400, }
+	double sheetThicknesses[] = {0.8, 1.0, 1.2};
+
+	double aluminumStringerDimensions[][2] = {{20, 1.5}, {20, 2}, {15, 1}, {15, 1.5}};
+	double steelStringerDimensions[][2] = {{15, 1.5}, {15, 2}};
+
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 4; j++) {
+			progressiveFailureAnalysis(aluminum, sheetThicknesses[i], aluminumStringerDimensions[j]);
+		}
+	}
+
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 4; j++) {
+			
+			progressiveFailureAnalysis(steel, sheetThicknesses[i], steelStringerDimensions[j]);
+		}
+	}
+
 
 	return 0;
 }
