@@ -131,7 +131,7 @@ double panelIx(const panel* p) {
 }
 
 double panelMass(const panel* p) {
-	return PANEL_LENGTH * panelArea(p) * p->m.rho;
+	return PANEL_LENGTH * panelArea(p) * p->m.rho / 1000;
 }
 
 double panelYield(const panel* p) {
@@ -163,7 +163,7 @@ double panelColumnBuckling(const panel* p) {
 }
 
 int main() {
-	//element e = {0.1, 0.1, 0.0, .constant = 1};
+	/*//element e = {0.1, 0.1, 0.0, .constant = 1};
 
 	stringer s = newStringer(0.0, 20.0, 1.5);
 	material al = {72400,0,345,483};
@@ -177,6 +177,9 @@ int main() {
 	//printf("%f\n", elementArea(&e));
 	//printf("%f\n", elementY(&e));
 	//printf("%f\n", elementQ(&e));
-	//printf("%f\n", elementIx(&e));
+	//printf("%f\n", elementIx(&e));*/
+
+	material al = {72400, }
+
 	return 0;
 }
