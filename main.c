@@ -150,7 +150,7 @@ double panelSheetBuckling(const panel* p) {
 	if (!p->sheet.notFailed) {
 		return -1;
 	} else {
-		double Kc[] = {3.6,3.6,3.6,3.6,3.6,3.6,3.6,3.6,3.6,3.6};
+		double Kc[] = {3.6,3.6,5.12,4,3.6,3.65,3.6,3.6,3.6,3.6};
 		
 		double pitch = PANEL_WIDTH / (p->numberOfStringers - 1.0);
 		
