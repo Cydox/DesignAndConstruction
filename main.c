@@ -8,8 +8,12 @@
 #define PANEL_LENGTH 500
 #define C 4
 
+#define BUCKLING_REQUIREMENT 15000
+#define FAILURE_REQUIREMENT 30000
+
 
 typedef struct material{
+	char* name;
 	double E;
 	double rho;
 	double sigmaYield;
@@ -162,8 +166,57 @@ double panelColumnBuckling(const panel* p) {
 	}
 }
 
-void progressiveFailureAnalysis(material m, double sheetThickness, double stringerDismension[2]) {
-	
+int getIndexOfMinFail(double failures[3]) {
+	int index = 0;
+	double val = failures[0];
+
+	for (int i = 1; i < 3; i++) {
+		if (failures[i] < val && !failures[i] < 0) {
+			val = failures[i];
+			index = i;
+		}
+		return index;
+	}
+}
+
+void progressiveFailureAnalysis(material m, double sheetThickness, double stringerDimension[2]) {
+
+	int numberOfStringers = 0;
+
+	double failure = 0;
+	double buckling = 0;
+
+	for (int i = 0; failure < FAILURE_REQUIREMENT && buckling < BUCKLING_REQUIREMENT; i++) {
+		printf("%s,%f,%f,%f,%d", m.name, sheetThickness, stringerDimension[0], stringerDimension[1], i);
+		bool failed = false;
+		bool buckled = false;
+
+		panel p = newPanel(i, sheetThickness, stringerDimension[0], stringerDimension[1], m);
+
+		while (!failed) {
+			double failures[] = {panelUltFailure(&p), panelSheetBuckling(&p), panelColumnBuckling(&p)};
+			int index = getIndexOfMinFail(failures);
+			
+			if (index == 0) {
+				failed = true;
+				failure = failures[0];
+			} else if (index == 1 && !buckled) {
+				buckled = true;
+				buckling = failures[1];
+				p.sheet.notFailed = false;
+			} else if (index == 1 && buckled) {
+				failed = true;
+				failure = failures[1];
+			} else if (index == 2 && !buckled) {
+				buckled = true;
+				buckling = failures[2];
+				p.stringer.notFailed = false;
+			} else if (index == 2 && buckled) {
+				failed = true;
+				failure = failures[2];
+			}
+		}
+	}
 }
 
 int main() {
@@ -183,8 +236,8 @@ int main() {
 	//printf("%f\n", elementQ(&e));
 	//printf("%f\n", elementIx(&e));*/
 	
-	material aluminum = {72400, 2.78, 345, 483};
-	material steel = {210000, 7.8, 1100, 1275};
+	material aluminum = {"Aluminum", 72400, 2.78, 345, 483};
+	material steel = {"Steel", 210000, 7.8, 1100, 1275};
 
 	double sheetThicknesses[] = {0.8, 1.0, 1.2};
 
