@@ -130,6 +130,10 @@ double panelIx(const panel* p) {
 	return elementIx(&(p->sheet)) + elementArea(&(p->sheet)) * (elementY(&(p->sheet)) - panelY(p)) * (elementY(&(p->sheet)) - panelY(p)) + p->numberOfStringers * (stringerIx(&(p->stringer)) + stringerArea(&(p->stringer)) * (stringerY(&(p->stringer)) - panelY(p)) * (stringerY(&(p->stringer)) - panelY(p)));
 }
 
+double panelMass(const panel* p) {
+	return PANEL_LENGTH * panelArea(p) * p->m.rho;
+}
+
 double panelYield(const panel* p) {
 	return panelArea(p) * p->m.sigmaYield;
 }
