@@ -1,11 +1,14 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <math.h>
 
 #define PI 3.141592653589
 
 #define PANEL_WIDTH 400
 #define PANEL_LENGTH 500
 #define C 4
+#define RIVET_C 2.1
+#define RIVET_SAFETY 0.8
 
 #define BUCKLING_REQUIREMENT 15000
 #define FAILURE_REQUIREMENT 30000
@@ -133,10 +136,6 @@ double panelIx(const panel* p) {
 	return elementIx(&(p->sheet)) + elementArea(&(p->sheet)) * (elementY(&(p->sheet)) - panelY(p)) * (elementY(&(p->sheet)) - panelY(p)) + p->numberOfStringers * (stringerIx(&(p->stringer)) + stringerArea(&(p->stringer)) * (stringerY(&(p->stringer)) - panelY(p)) * (stringerY(&(p->stringer)) - panelY(p)));
 }
 
-double panelMass(const panel* p) {
-	return PANEL_LENGTH * panelArea(p) * p->m.rho / 1000;
-}
-
 double panelYield(const panel* p) {
 	return panelArea(p) * p->m.sigmaYield;
 }
@@ -178,6 +177,28 @@ int getIndexOfMinFail(double failures[3]) {
 	return index;
 }
 
+double calcRivetSpace(const panel* p) {
+	return RIVET_SAFETY * sqrt((0.9 * RIVET_C * p->m.E * p->sheet.y * p->sheet.y) / (BUCKLING_REQUIREMENT / panelArea(p)));
+}
+
+int numberOfRivets(const panel* p) {
+	double s = calcRivetSpace(p);
+	return (int) ((PANEL_LENGTH - (2 * 30)) / s) * p->numberOfStringers;
+}
+
+double interRivetBuckling(const panel* p) {
+	if (!p->sheet.notFailed) {
+		return -1;
+	} else {
+		double s = calcRivetSpace(p);
+		return 0.9 * RIVET_C * p->m.E * (p->sheet.y / s) * (p->sheet.y / s) * panelArea(p);
+	}
+}
+
+double panelMass(const panel* p) {
+	return (PANEL_LENGTH * panelArea(p) * p->m.rho / 1000) + ((numberOfRivets(p) * 0.488) - (p->m.rho * PI * 1.5 * 1.5 * (p->sheet.y + p->stringer.e2.x) / 1000));
+}
+
 void progressiveFailureAnalysis(material m, double sheetThickness, double stringerDimension[2]) {
 
 	int numberOfStringers = 0;
@@ -191,9 +212,9 @@ void progressiveFailureAnalysis(material m, double sheetThickness, double string
 
 		panel p = newPanel(i, sheetThickness, stringerDimension[0], stringerDimension[1], m);
 
-		printf("%s,%f,%f,%f,%f,%d", m.name, panelMass(&p), sheetThickness, stringerDimension[0], stringerDimension[1], i);
+		printf("%s,%f,%f,%f,%f,%f,%d", m.name, panelMass(&p), sheetThickness, stringerDimension[0], stringerDimension[1], calcRivetSpace(&p), i);
 		while (!failed) {
-			double failures[] = {panelUltFailure(&p), panelSheetBuckling(&p), panelColumnBuckling(&p)};
+			double failures[] = {panelUltFailure(&p), panelSheetBuckling(&p), panelColumnBuckling(&p), interRivetBuckling(&p)};
 			int index = getIndexOfMinFail(failures);
 			
 			if (index == 0) {
@@ -219,6 +240,14 @@ void progressiveFailureAnalysis(material m, double sheetThickness, double string
 				failed = true;
 				failure = failures[2];
 				printf(",stringers,%f", failure);
+			} else if (index == 3 && !buckled) {
+				buckled = true;
+				buckling = failures[3];
+				printf(",interrivet,%f", buckling);
+			} else if (index == 3 && buckled) {
+				failed = true;
+				failure = failures[3];
+				printf(",interrivet,%f", failure);
 			}
 		}
 
