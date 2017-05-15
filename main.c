@@ -199,7 +199,54 @@ double panelMass(const panel* p) {
 	return (PANEL_LENGTH * panelArea(p) * p->m.rho / 1000) + ((numberOfRivets(p) * 0.488) - (p->m.rho * PI * 1.5 * 1.5 * (p->sheet.y + p->stringer.e2.x) / 1000));
 }
 
-void progressiveFailureAnalysis(material m, double sheetThickness, double stringerDimension[2]) {
+void progressiveFailureAnalysis(panel* p, double* buckling, double* failure) {
+	bool failed = false;
+	bool buckled = false;
+	
+	while (!failed) {
+		double failures[] = {panelUltFailure(p), panelSheetBuckling(p), panelColumnBuckling(p), interRivetBuckling(p)};
+		int index = getIndexOfMinFail(failures);
+		
+		if (index == 0) {
+			failed = true;
+			*failure = failures[0];
+
+			printf(",all,%f", *failure);
+		} else if (index == 1 && !buckled) {
+			buckled = true;
+			*buckling = failures[1];
+			p->sheet.notFailed = false;
+			printf(",sheet,%f", *buckling);
+		} else if (index == 1 && buckled) {
+			failed = true;
+			*failure = failures[1];
+			printf(",sheet,%f", *failure);
+		} else if (index == 2 && !buckled) {
+			buckled = true;
+			*buckling = failures[2];
+			p->stringer.notFailed = false;
+			printf(",stringers,%f", *buckling);
+		} else if (index == 2 && buckled) {
+			failed = true;
+			*failure = failures[2];
+			printf(",stringers,%f", *failure);
+		} else if (index == 3 && !buckled) {
+			buckled = true;
+			p->sheet.notFailed = false;
+			*buckling = failures[3];
+			printf(",interrivet,%f", *buckling);
+		} else if (index == 3 && buckled) {
+			failed = true;
+			*failure = failures[3];
+			printf(",interrivet,%f", *failure);
+		}
+	}
+
+	printf("\n");
+
+}
+
+void optimizationAnalysis(material m, double sheetThickness, double stringerDimension[2]) {
 
 	int numberOfStringers = 0;
 
@@ -207,51 +254,11 @@ void progressiveFailureAnalysis(material m, double sheetThickness, double string
 	double buckling = 0;
 
 	for (int i = 2; (failure < FAILURE_REQUIREMENT) || (buckling < BUCKLING_REQUIREMENT); i++) {
-		bool failed = false;
-		bool buckled = false;
-
 		panel p = newPanel(i, sheetThickness, stringerDimension[0], stringerDimension[1], m);
 
 		printf("%s,%f,%f,%f,%f,%f,%d", m.name, panelMass(&p), sheetThickness, stringerDimension[0], stringerDimension[1], calcRivetSpace(&p), i);
-		while (!failed) {
-			double failures[] = {panelUltFailure(&p), panelSheetBuckling(&p), panelColumnBuckling(&p), interRivetBuckling(&p)};
-			int index = getIndexOfMinFail(failures);
-			
-			if (index == 0) {
-				failed = true;
-				failure = failures[0];
 
-				printf(",all,%f", failure);
-			} else if (index == 1 && !buckled) {
-				buckled = true;
-				buckling = failures[1];
-				p.sheet.notFailed = false;
-				printf(",sheet,%f", buckling);
-			} else if (index == 1 && buckled) {
-				failed = true;
-				failure = failures[1];
-				printf(",sheet,%f", failure);
-			} else if (index == 2 && !buckled) {
-				buckled = true;
-				buckling = failures[2];
-				p.stringer.notFailed = false;
-				printf(",stringers,%f", buckling);
-			} else if (index == 2 && buckled) {
-				failed = true;
-				failure = failures[2];
-				printf(",stringers,%f", failure);
-			} else if (index == 3 && !buckled) {
-				buckled = true;
-				buckling = failures[3];
-				printf(",interrivet,%f", buckling);
-			} else if (index == 3 && buckled) {
-				failed = true;
-				failure = failures[3];
-				printf(",interrivet,%f", failure);
-			}
-		}
-
-		printf("\n");
+		progressiveFailureAnalysis(&p, &buckling, &failure);
 	}
 }
 
@@ -280,19 +287,24 @@ int main() {
 	double aluminumStringerDimensions[][2] = {{20, 1.5}, {20, 2}, {15, 1}, {15, 1.5}};
 	double steelStringerDimensions[][2] = {{15, 1.5}, {15, 2}};
 
+	double buckling = 0;
+	double failure = 0;
+	panel original = newPanel(7, 0.8, 20, 1.5, aluminum);
+	printf("%s,%f,%f,%f,%f,%f,%d", aluminum.name, panelMass(&original), 0.8, 20.0, 1.5, calcRivetSpace(&original), 7);
+	progressiveFailureAnalysis(&original, &buckling, &failure);
+
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 4; j++) {
-			progressiveFailureAnalysis(aluminum, sheetThicknesses[i], aluminumStringerDimensions[j]);
+			optimizationAnalysis(aluminum, sheetThicknesses[i], aluminumStringerDimensions[j]);
 		}
 	}
 
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 2; j++) {
 			
-			progressiveFailureAnalysis(steel, sheetThicknesses[i], steelStringerDimensions[j]);
+			optimizationAnalysis(steel, sheetThicknesses[i], steelStringerDimensions[j]);
 		}
 	}
-
 
 	return 0;
 }
